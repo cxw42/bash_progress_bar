@@ -28,19 +28,18 @@ TRAP_SET="false"
 
 setup_scroll_area() {
     # If trapping is enabled, we will want to activate it whenever we setup the scroll area and remove it when we break the scroll area
-    if [ "$TRAPPING_ENABLED" = "true" ]; then
+    if [[ "$TRAPPING_ENABLED" = "true" ]]; then
         trap_on_interrupt
     fi
 
-    lines=$(tput lines)
-    let lines=$lines-1
+    local -r lines="$(tput lines)"
     # Scroll down a bit to avoid visual glitch when the screen area shrinks by one row
     echo -en "\n"
 
     # Save cursor
     echo -en "$CODE_SAVE_CURSOR"
     # Set scroll region (this will place the cursor in the top left)
-    echo -en "\033[0;${lines}r"
+    echo -en "\033[0;$((lines-1))r"
 
     # Restore cursor but ensure its inside the scrolling area
     echo -en "$CODE_RESTORE_CURSOR"
@@ -51,7 +50,7 @@ setup_scroll_area() {
 }
 
 destroy_scroll_area() {
-    lines=$(tput lines)
+    local -r lines="$(tput lines)"
     # Save cursor
     echo -en "$CODE_SAVE_CURSOR"
     # Set scroll region (this will place the cursor in the top left)
@@ -68,15 +67,14 @@ destroy_scroll_area() {
     echo -en "\n\n"
 
     # Once the scroll area is cleared, we want to remove any trap previously set. Otherwise, ctrl+c will exit our shell
-    if [ "$TRAP_SET" = "true" ]; then
+    if [[ "$TRAP_SET" = "true" ]]; then
         trap - INT
     fi
 }
 
 draw_progress_bar() {
-    percentage=$1
-    lines=$(tput lines)
-    let lines=$lines
+    local -r percentage="$1"
+    local -r lines="$(tput lines)"
     # Save cursor
     echo -en "$CODE_SAVE_CURSOR"
 
@@ -88,16 +86,15 @@ draw_progress_bar() {
 
     # Draw progress bar
     PROGRESS_BLOCKED="false"
-    print_bar_text $percentage
+    print_bar_text "$percentage"
 
     # Restore cursor position
     echo -en "$CODE_RESTORE_CURSOR"
 }
 
 block_progress_bar() {
-    percentage=$1
-    lines=$(tput lines)
-    let lines=$lines
+    local -r percentage="$1"
+    local -r lines="$(tput lines)"
     # Save cursor
     echo -en "$CODE_SAVE_CURSOR"
 
@@ -109,15 +106,14 @@ block_progress_bar() {
 
     # Draw progress bar
     PROGRESS_BLOCKED="true"
-    print_bar_text $percentage
+    print_bar_text "$percentage"
 
     # Restore cursor position
     echo -en "$CODE_RESTORE_CURSOR"
 }
 
 clear_progress_bar() {
-    lines=$(tput lines)
-    let lines=$lines
+    local -r lines="$(tput lines)"
     # Save cursor
     echo -en "$CODE_SAVE_CURSOR"
 
@@ -132,19 +128,19 @@ clear_progress_bar() {
 }
 
 print_bar_text() {
-    local percentage=$1
-    local cols=$(tput cols)
-    let bar_size=$cols-17
+    local -r percentage="$1"
+    local -r cols="$(tput cols)"
+    local -r bar_size="$((cols-17))"
 
     local color="${COLOR_FG}${COLOR_BG}"
-    if [ "$PROGRESS_BLOCKED" = "true" ]; then
+    if [[ "$PROGRESS_BLOCKED" = "true" ]]; then
         color="${COLOR_FG}${COLOR_BG_BLOCKED}"
     fi
 
     # Prepare progress bar
-    let complete_size=($bar_size*$percentage)/100
-    let remainder_size=$bar_size-$complete_size
-    progress_bar=$(echo -ne "["; echo -en "${color}"; printf_new "#" $complete_size; echo -en "${RESTORE_FG}${RESTORE_BG}"; printf_new "." $remainder_size; echo -ne "]");
+    local -r complete_size="$(( (bar_size*percentage)/100 ))"
+    local -r remainder_size="$(( bar_size-complete_size ))"
+    progress_bar="$(echo -ne "["; echo -en "${color}"; printf_new "#" "$complete_size"; echo -en "${RESTORE_FG}${RESTORE_BG}"; printf_new "." "$remainder_size"; echo -ne "]")"
 
     # Print progress bar
     echo -ne " Progress ${percentage}% ${progress_bar}"
@@ -166,16 +162,15 @@ cleanup_on_interrupt() {
 }
 
 printf_new() {
-    str=$1
-    num=$2
-    v=$(printf "%-${num}s" "$str")
+    local -r str="$1"
+    local -r num="$2"
+    local -r v="$(printf "%-${num}s" "$str")"
     echo -ne "${v// /$str}"
 }
 
-
 # SPDX-License-Identifier: MIT
 #
-# Copyright (c) 2018--2020 Polle Vanhoof
+# Copyright (c) 2018--2020 Polle Vanhoof and contributors
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
