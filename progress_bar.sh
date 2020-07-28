@@ -4,6 +4,9 @@
 # Usage:
 # Source this script
 # enable_trapping <- optional to clean up properly if user presses ctrl-c
+#   If you pass enable_trapping the name of a function, that function
+#   will be called after the scroll area is cleaned up, and will be left
+#   as the INT trap after you call destroy_scroll_area.
 # setup_scroll_area <- create empty progress bar
 # draw_progress_bar 10 <- advance progress bar
 # draw_progress_bar 40 <- advance progress bar
@@ -25,6 +28,7 @@ RESTORE_BG="\e[49m"
 PROGRESS_BLOCKED="false"
 TRAPPING_ENABLED="false"
 TRAP_SET="false"
+PBAR_CUSTOM_TRAP=""
 
 setup_scroll_area() {
     # If trapping is enabled, we will want to activate it whenever we setup the scroll area and remove it when we break the scroll area
@@ -68,7 +72,7 @@ destroy_scroll_area() {
 
     # Once the scroll area is cleared, we want to remove any trap previously set. Otherwise, ctrl+c will exit our shell
     if [[ "$TRAP_SET" = "true" ]]; then
-        trap - INT
+        trap "${PBAR_CUSTOM_TRAP:--}" INT
     fi
 }
 
@@ -148,6 +152,7 @@ print_bar_text() {
 
 enable_trapping() {
     TRAPPING_ENABLED="true"
+    PBAR_CUSTOM_TRAP="$1"
 }
 
 trap_on_interrupt() {
@@ -158,6 +163,7 @@ trap_on_interrupt() {
 
 cleanup_on_interrupt() {
     destroy_scroll_area
+    [[ "$PBAR_CUSTOM_TRAP" ]] && type "$PBAR_CUSTOM_TRAP" &>/dev/null && "$PBAR_CUSTOM_TRAP"
     exit
 }
 
